@@ -15,14 +15,19 @@ if(!class_exists('DMSTOCKS')){
         }
 
         public function init(){
+
+            // Pages
+
             add_action('admin_menu',function(){
                 add_menu_page('Stocks Database','Stocks Database','manage_options','stocks-database',function(){
                     include DM_STOCKS_PLUGIN_DIR . 'partials/admin-stocks-management.php';
                 },'dashicons-chart-area',76);
             });
 
-            add_action( 'wp_ajax_stock_ticker_search', [&$this,'stock_ticker_search'] );
-            add_action( 'wp_ajax_nopriv_stock_ticker_search', [&$this,'stock_ticker_search'] );
+            // Ajax Functions
+
+            add_action( 'wp_ajax_stock_ticker_search_symbol', [&$this,'stock_ticker_search'] );
+            add_action( 'wp_ajax_nopriv_stock_ticker_search_symbol', [&$this,'stock_ticker_search'] );
 
             add_action( 'wp_ajax_get_stock_history', [&$this,'get_stock_history'] );
             add_action( 'wp_ajax_nopriv_get_stock_history', [&$this,'get_stock_history'] );
@@ -36,6 +41,38 @@ if(!class_exists('DMSTOCKS')){
             add_action( 'wp_ajax_updateStockData', [&$this,'updateStockData'] );
             add_action( 'wp_ajax_nopriv_updateStockData', [&$this,'updateStockData'] );
 
+            add_action( 'wp_ajax_add_stock_data_to_user', [&$this,'add_stock_data_to_user'] );
+            add_action( 'wp_ajax_nopriv_add_stock_data_to_user', [&$this,'add_stock_data_to_user'] );
+
+
+            // Shortcodes
+
+            add_shortcode( 'stockswatchlist', function($atts){
+                wp_enqueue_style('client-stockswatchlist-css', DM_STOCKS_PLUGIN_URL . 'assets/watchlist.css', false, null);
+
+                wp_register_script('client-stocks-sparklines-js', 'http://omnipotent.net/jquery.sparkline/2.1.2/jquery.sparkline.min.js', ['jquery'] );
+                wp_enqueue_script('client-stocks-sparklines-js');
+
+                wp_enqueue_script('jquery-ui-core');
+                wp_enqueue_script('jquery-ui-dialog');
+                wp_enqueue_script('jquery-ui-autocomplete');
+
+                global $wp_scripts;
+                // get registered script object for jquery-ui
+                $ui = $wp_scripts->query('jquery-ui-core');
+                // tell WordPress to load the Smoothness theme from Google CDN
+                $protocol = is_ssl() ? 'https' : 'http';
+                $url = "$protocol://ajax.googleapis.com/ajax/libs/jqueryui/{$ui->ver}/themes/smoothness/jquery-ui.min.css";
+                wp_enqueue_style('jquery-ui-smoothness', $url, false, null);
+
+                wp_register_script('client-stocks-widget', 'https://d33t3vvu2t2yu5.cloudfront.net/tv.js', ['jquery'] );
+                wp_enqueue_script('client-stocks-widget');
+
+                wp_register_script('client-stocks-watchlist-js', DM_STOCKS_PLUGIN_URL . 'assets/watchlist.js', ['jquery'] );
+                wp_enqueue_script('client-stocks-watchlist-js');
+
+                include DM_STOCKS_PLUGIN_DIR . 'partials/admin-stocks-watchlist.php';
+            });
         }
 
         public function save_stock_data(){
@@ -73,14 +110,14 @@ if(!class_exists('DMSTOCKS')){
                         'ts' => $stockData['details']->ts,
                     ]),
                     'statistics' => json_encode([
-                        'change' => $stockData['details']->change,
-                        'change_percent' => $stockData['details']->chg_percent,
-                        'day_high' => $stockData['details']->day_high,
-                        'day_low' => $stockData['details']->day_low,
-                        'year_high' => $stockData['details']->year_high,
-                        'year_low' => $stockData['details']->year_low,
-                        'volume' => $stockData['details']->volume,
-                        'price' => $stockData['details']->price,
+                        'change' => (float)$stockData['details']->change,
+                        'change_percent' => (float)$stockData['details']->chg_percent,
+                        'day_high' => (float)$stockData['details']->day_high,
+                        'day_low' => (float)$stockData['details']->day_low,
+                        'year_high' => (float)$stockData['details']->year_high,
+                        'year_low' => (float)$stockData['details']->year_low,
+                        'volume' => (float)$stockData['details']->volume,
+                        'price' => (float)$stockData['details']->price,
                     ]),
                     'profile' => json_encode($stockData['profile'])
                 ];
@@ -107,7 +144,9 @@ if(!class_exists('DMSTOCKS')){
             $symbol = $_POST['s'];
 
             if(!empty($symbol)):
-                $data = $wpdb->get_results( $wpdb->prepare("SELECT `date`, `open`, `high`, `low`, `close`, `volume` FROM ".$table." WHERE `symbol` = %s ORDER BY `date` ASC",  $symbol) );
+                $data = $wpdb->get_results( $wpdb->prepare("SELECT `date`, `open`, `high`, `low`, `close`, `volume` FROM ".$table." WHERE `symbol` = %s ORDER BY `date` DESC LIMIT 2000",  $symbol) );
+
+                $data = array_reverse($data);
             endif;
 
             exit(json_encode($data));
@@ -115,8 +154,12 @@ if(!class_exists('DMSTOCKS')){
 
         public function get_stock_data(){
             header('Content-type: application/json');
+            global $wpdb;
+            global $table_prefix;
+            $table  = $table_prefix . 'dm_quotes_data';
             $quote = false;
-            $stockData = $this->prepareStockData($_POST['s']);
+            $symbol = $_POST['s'];
+            $stockData = $this->prepareStockData($symbol);
 
             if(!empty($stockData)){
                 $quote = [
@@ -141,8 +184,14 @@ if(!class_exists('DMSTOCKS')){
                         'volume' => $stockData['details']->volume,
                         'price' => $stockData['details']->price,
                     ]),
-                    'profile' => json_encode($stockData['profile'])
+                    'profile' => json_encode($stockData['profile']),
                 ];
+
+                // Get Last 10 History
+
+                $quote['history'] = $wpdb->get_results( $wpdb->prepare("SELECT `date`, `open`, `high`, `low`, `close`, `volume` FROM ".$table." WHERE `symbol` = %s ORDER BY `date` DESC LIMIT 20",  $symbol) );
+
+                $quote['history'] = array_reverse($quote['history']);
 
             }
 
@@ -151,14 +200,14 @@ if(!class_exists('DMSTOCKS')){
 
         public function stock_ticker_search(){
 
-
             header('Content-type: application/json');
-            $query = $_POST['s'];
+            $query = $_GET['s'];
             $data = [];
             $results = $this->file_get_contents_curl('http://d.yimg.com/autoc.finance.yahoo.com/autoc?region=us&lang=en&query='.$query);
 
             if(!empty($results)){
                 $results = json_decode($results);
+
                 if(count($results->ResultSet->Result)){
                     foreach ($results->ResultSet->Result as $result) {
 
@@ -175,9 +224,6 @@ if(!class_exists('DMSTOCKS')){
 
             exit(json_encode($data));
         }
-
-
-
 
         public function file_get_contents_curl($url){
 
@@ -241,6 +287,18 @@ if(!class_exists('DMSTOCKS')){
 
         }
 
+        public function add_stock_data_to_user(){
+            $symbol = $_POST['s'];
+            if(!empty($symbol)){
+                return add_user_meta(get_current_user_id(),'stock-watchlist',[
+                    'symbol' => $symbol,
+                    'date' => date('Y-m-d H:i:s')
+                ]);
+            }
+
+            return 0;
+        }
+
         public function prepareStockData($symbol = false){
             if(!$symbol) return false;
 
@@ -293,7 +351,7 @@ if(!class_exists('DMSTOCKS')){
 
             // If valid, decode into JSON object
             $responseObject = json_decode($responseString);
-
+            $data['fetched'] = count($responseObject->quoteSummary->result);
             // Check if there is a profile data fetched
             if(count($responseObject->quoteSummary->result)){
                 $data['profile'] = $responseObject->quoteSummary->result[0]->summaryProfile;
@@ -303,7 +361,7 @@ if(!class_exists('DMSTOCKS')){
 
         public function updateStockData(){
             $sym = $_POST['symbol'];
-            $timeLastMonth = strtotime('last month');
+            $timeLastMonth = strtotime('last year');
             $from = [
                 date('m',$timeLastMonth),
                 date('d',$timeLastMonth),
@@ -325,7 +383,6 @@ if(!class_exists('DMSTOCKS')){
             global $wpdb;
             global $table_prefix;
             $table  = $table_prefix . 'dm_quotes_data';
-
             foreach ($csv as $key => $data) {
                 // Check if Data exist
                 $exist = false;
@@ -337,6 +394,7 @@ if(!class_exists('DMSTOCKS')){
                     if(!empty($dataEntry)){
                         $exist = true;
                     }
+
 
                     // IF NOT EXIST , INSERT
                     if(!$exist){

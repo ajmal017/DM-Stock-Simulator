@@ -56,10 +56,11 @@ jQuery(function($){
     $( "#ticker_symbol" ).autocomplete({
         source: function( request, response ) {
             $.ajax( {
-                url: "/wp-admin/admin-ajax.php?action=stock_ticker_search",
-                type: 'POST',
+                url: "/wp-admin/admin-ajax.php",
+                type: 'GET',
                 data: {
-                    s: request.term
+                    s: request.term,
+                    action: 'stock_ticker_search_symbol'
                 },
                 success: function( data ) {
                     response( data );
@@ -97,7 +98,7 @@ jQuery(function($){
                         "container_id": "ticker_chart",
                         "symbols": [
                             [
-                                data.name,
+                                data.name.replace(/[^0-9a-z\s]/gi, ''),
                                 data.symbol
                             ]
                         ],
@@ -290,7 +291,16 @@ jQuery(function($){
                     "periods": [ {
                         "period": "DD",
                         "count": 7,
-                        "label": "7 days"
+                        "label": "1 Week"
+                    }, {
+                        "period": "MM",
+                        "count": 1,
+                        "selected" : true,
+                        "label": "1 Month"
+                    }, {
+                        "period": "YY",
+                        "count": 1,
+                        "label": "1 Year"
                     }, {
                         "period": "MAX",
                         "label": "MAX"
