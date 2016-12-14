@@ -68,7 +68,7 @@
             if(count($watchlist)):
                 foreach ($watchlist as $key => $watch) {
                     ?>
-                    <tr data-symbol="<?=$watch['symbol']?>">
+                    <tr data-symbol="<?=$watch['symbol']?>" class="stock-row">
                         <td class="value-subdetails">
                             <label class="lead-text"><?=$watch['symbol']?></label>
                             <small class="help-text">Loading data...</small>
@@ -83,7 +83,13 @@
                     </tr>
                     <?php
                 }
+                ?>
+                <tr>
+                    <td colspan="10">
 
+                    </td>
+                </tr>
+                <?php
                 else :
                     ?>
                     <tr class="watchlist-empty">
@@ -92,47 +98,6 @@
                     <?php
                 endif;
                 ?>
-
-
-                <tr class="hidden">
-                    <td class="value-subdetails">
-                        <label class="lead-text">AAPL</label>
-                        <small class="help-text">Apple Inc.</small>
-                    </td>
-                    <td class="sparkwrap">
-                        <span class="sparklines" sparkType="line" data-plugin-options='{"barColor":"#D9534F","height":"26px"}'><!-- 8,4,0,0,0,0,1,4,4,10,10,10,10,0,0,0,4,6,5,9,10 --></span>
-                    </td>
-                    <td>
-                        <button class="btn btn-sm btn-success"><i class="fa fa-dollar"></i> 30.20</button>
-                    </td>
-                    <td>
-                        <button class="btn btn-sm btn-danger"><i class="fa fa-dollar"></i> 30.20</button>
-                    </td>
-                    <td class="value-subdetails subdetails-right">
-                        <label class="lead-text">10.55</label>
-                        <small class="help-text">30.12%</small>
-                    </td>
-                    <td class="value-subdetails subdetails-right">
-                        <label class="lead-text">10.55</label>
-                        <small class="help-text">&nbsp;</small>
-                    </td>
-                    <td class="value-subdetails subdetails-right">
-                        <label class="lead-text">10.55</label>
-                        <small class="help-text">&nbsp;</small>
-                    </td>
-                    <td class="value-subdetails subdetails-right">
-                        <label class="lead-text">10.55</label>
-                        <small class="help-text">&nbsp;</small>
-                    </td>
-                    <td class="value-subdetails subdetails-right">
-                        <label class="lead-text">10.55</label>
-                        <small class="help-text">&nbsp;</small>
-                    </td>
-                    <td class="value-subdetails subdetails-right">
-                        <label class="lead-text">10.55</label>
-                        <small class="help-text">&nbsp;</small>
-                    </td>
-                </tr>
             </tbody>
         </table>
     </div>

@@ -87,6 +87,35 @@
                             }
                         }
                     }
+
+                    &.chart-row{
+                        overflow: hidden;
+                    }
+
+                    background: #f5f5f5;
+                    transition: background 200ms linear;
+                    &.open{
+                        background: #fff;
+                    }
+
+                    &:hover{
+                        &:not(.open){
+                            background: #eee;
+                        }
+                    }
+
+                    &.stock-row,&.chart-row{
+                        &.open{
+                            > td{
+                                &:first-child{
+                                    border-left: 1px solid #333;
+                                }
+                                &:last-child{
+                                    border-right: 1px solid #333;
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }

@@ -71,6 +71,23 @@ if(!class_exists('DMSTOCKS')){
                 wp_register_script('client-stocks-watchlist-js', DM_STOCKS_PLUGIN_URL . 'assets/watchlist.js', ['jquery'] );
                 wp_enqueue_script('client-stocks-watchlist-js');
 
+
+                wp_enqueue_style('admin-amcharts-style', 'https://www.amcharts.com/lib/3/plugins/export/export.css', false, null);
+
+                $scriptsPack = [
+                    'https://www.amcharts.com/lib/3/amcharts.js',
+                    'https://www.amcharts.com/lib/3/serial.js',
+                    'https://www.amcharts.com/lib/3/amstock.js',
+                    'https://www.amcharts.com/lib/3/plugins/export/export.min.js',
+                    'https://www.amcharts.com/lib/3/themes/light.js',
+                ];
+
+                foreach ($scriptsPack as $key => $url) {
+                    wp_register_script('admin-amcharts-script' . ($key+1), $url , [] );
+                    wp_enqueue_script('admin-amcharts-script' . ($key+1));
+                }
+
+
                 include DM_STOCKS_PLUGIN_DIR . 'partials/admin-stocks-watchlist.php';
             });
         }
