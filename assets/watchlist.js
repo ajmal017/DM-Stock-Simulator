@@ -86,8 +86,6 @@ jQuery(function($){
                     s:$symbol
                 },
                 success: function( data ) {
-                    console.log(data);
-
 
                     var statistics = JSON.parse(data.statistics)
 
@@ -96,17 +94,17 @@ jQuery(function($){
                     var $latestHistory = data.history[data.history.length - 1] || [];
 
 
-                    $thisRowCells.push('<td class="value-subdetails"> <label class="lead-text">'+data.symbol+'</label> <small class="help-text">'+data.name+'</small> </td>');
+                    $thisRowCells.push('<td class="value-subdetails"> <label class="lead-text">'+data.symbol+'<i class="toggle-chart-info fa pull-right fa-bar-chart-o text-gray"></i></label> <small class="help-text">'+data.name+'</small> </td>');
                     $thisRowCells.push('<td class="sparkwrap"><span class="sparklines" data-symbol="'+data.symbol+'"></span></td>');
-                    $thisRowCells.push('<td> <button class="btn btn-sm btn-success"><i class="fa fa-dollar"></i> '+parseFloat(statistics.price).toFixed(2)+'</button> </td>');
-                    $thisRowCells.push('<td> <button class="btn btn-sm btn-danger"><i class="fa fa-dollar"></i> '+parseFloat(statistics.price).toFixed(2)+'</button> </td>');
+                    $thisRowCells.push('<td> <button class="btn btn-sm btn-success btn-sell"><i class="fa fa-dollar"></i> '+parseFloat(statistics.price).toFixed(2)+'</button> </td>');
+                    $thisRowCells.push('<td> <button class="btn btn-sm btn-danger btn-buy"><i class="fa fa-dollar"></i> '+parseFloat(statistics.price).toFixed(2)+'</button> </td>');
                     $thisRowCells.push('<td class="value-subdetails subdetails-right"> <label class="lead-text">'+parseFloat(statistics.change).toFixed(2)+'</label> <small class="help-text">'+parseFloat(statistics.change_percent).toFixed(2)+'%</small> </td>');
                     $thisRowCells.push('<td class="value-subdetails subdetails-right"> <label class="lead-text">'+parseFloat($latestHistory.high).toFixed(2)+'</label> <small class="help-text">&nbsp;</small> </td>');
                     $thisRowCells.push('<td class="value-subdetails subdetails-right"> <label class="lead-text">'+parseFloat($latestHistory.low).toFixed(2)+'</label> <small class="help-text">&nbsp;</small> </td>');
                     $thisRowCells.push('<td class="value-subdetails subdetails-right"> <label class="lead-text">'+parseFloat($latestHistory.open).toFixed(2)+'</label> <small class="help-text">&nbsp;</small> </td>');
                     $thisRowCells.push('<td class="value-subdetails subdetails-right"> <label class="lead-text">'+parseFloat($latestHistory.close).toFixed(2)+'</label> <small class="help-text">&nbsp;</small> </td>');
                     $thisRowCells.push('<td class="value-subdetails subdetails-right"> <label class="lead-text">'+parseFloat($latestHistory.volume).toFixed(0)+'</label> <small class="help-text">&nbsp;</small> </td>');
-
+                    $thisRow.data('price',parseFloat(statistics.price).toFixed(2));
 
                     $thisRow.html($thisRowCells.join(''));
                     var $sparkspan = $thisRow.find('[data-symbol="'+data.symbol+'"]').first();
@@ -116,9 +114,6 @@ jQuery(function($){
                         history.open.push(parseFloat(data.history[i].open));
                         history.close.push(parseFloat(data.history[i].close));
                     }
-
-
-                    console.log(history);
 
                     var $color = {
                         'good' : [ '#a4e2a4' , '#4cae4c' ],
@@ -158,7 +153,6 @@ jQuery(function($){
                     s: $ticker_symbol
                 },
                 success: function( data ) {
-                    console.log(data);
 
                     $.ajax( {
                         url: "/wp-admin/admin-ajax.php?action=add_stock_data_to_user",
@@ -172,7 +166,7 @@ jQuery(function($){
                         error: function(data) {
                             $(this).text('Add Symbol');
                             $(this).removeClass('disabled');
-                            console.log(data);
+
                         }
                     } );
 
@@ -184,9 +178,10 @@ jQuery(function($){
     });
 
 
-    $('.stock-table table').delegate('tr','click',function(){
-        var symbol = $(this).data('symbol');
-        var thisRow = $(this);
+    $('.stock-table table tr').delegate('.toggle-chart-info','click',function(event){
+        event.stopImmediatePropagation();
+        var thisRow = $(this).closest('tr');
+        var symbol = thisRow.data('symbol');
 
         if(thisRow.hasClass('stock-row') && thisRow.hasClass('open')){
             thisRow.removeClass('open');
@@ -213,7 +208,7 @@ jQuery(function($){
 
         if(thisRow.hasClass('stock-row') && symbol && symbol.length){
 
-            if($(this).next().first().hasClass('chart-row')) return true;
+            if(thisRow.next().first().hasClass('chart-row')) return true;
 
             $('<tr class="chart-row"><td colspan="10"><ul class="nav nav-tabs nav-justified"> <li><a href="#profile-'+symbol+'" data-toggle="tab">Profile</a></li> <li class="active"><a href="#graph-'+symbol+'" data-toggle="tab">Graph</a></li> </ul> <div class="tab-content"> <div class="tab-pane fade" id="profile-'+symbol+'"><div class="row"> <div class="col-sm-4 text-left"> <label class="bold">Symbol: </label><span class="stock-data-symbol">-</span><br> <label class="bold">Name: </label><span class="stock-data-name">-</span><br> <label class="bold">Type: </label><span class="stock-data-type">-</span><br> <label class="bold">Website: </label><span class="stock-data-website">-</span><br> <label class="bold">Industry: </label><span class="stock-data-industry">-</span><br> </div> <div class="col-sm-4 text-left"> <label class="bold">Address: </label><span class="stock-data-address">-</span><br> <label class="bold">City: </label><span class="stock-data-city">-</span><br> <label class="bold">State: </label><span class="stock-data-state">-</span><br> <label class="bold">Country </label><span class="stock-data-country">-</span><br> <label class="bold">ZIP: </label><span class="stock-data-zip">-</span><br> </div> <div class="col-sm-4 text-left"> <label class="bold">Phone: </label><span class="stock-data-phone">-</span><br> <label class="bold">Sector: </label><span class="stock-data-sector">-</span><br> <label class="bold">Employees: </label><span class="stock-data-employees">-</span><br> </div> <div class="col-sm-12 text-left"> <p style="max-height: 220px; overflow: auto;"> <label class="bold">Summary: </label><br> <span class="stock-data-summary">-</span> </p> </div> </div> </div> <div class="tab-pane fade in active" id="graph-'+symbol+'"> <div id="chart-'+symbol+'" style="width:100%;height:500px;"></div> </div> </div></td></tr>').insertAfter(thisRow);
 
@@ -371,4 +366,36 @@ jQuery(function($){
         } );
     }
 
+    $('.stock-table table tr').delegate('.btn-buy','click',function(event){
+
+        var $thisrow = $(this).closest('tr');
+        var $symbol = $thisrow.data('symbol');
+        var $price = $thisrow.data('price');
+
+        bootbox.prompt({
+            size: "small",
+            title: "Buy "+ $symbol+" at $ "+$price,
+            inputType: 'number',
+            value: '100',
+            callback: function (result) {
+
+                var waitdialog = bootbox.dialog({ message: '<div class="text-center"><i class="fa fa-spin fa-spinner"></i> Loading...</div>' });
+
+                $.ajax({
+                    url: "/wp-admin/admin-ajax.php?action=buy_user_stocks",
+                    type: 'POST',
+                    data: {
+                        amount : result,
+                        symbol : $symbol,
+                        price  : $price
+                    },
+                    success: function( data ) {
+                        window.location.reload();
+                        // waitdialog.modal('hide');
+                    }
+                });
+            }
+        });
+
+    });
 });

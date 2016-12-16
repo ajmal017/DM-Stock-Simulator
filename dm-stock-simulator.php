@@ -13,8 +13,11 @@ define( 'DM_STOCKS_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'DM_STOCKS_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'DM_STOCKS_DEBUG' , true );
 
+define( 'DM_STOCKS_INITIAL_WALLET' , 100000);
+
 // require_once DM_STOCKS_PLUGIN_DIR . '/vendor/autoload.php';
 require_once( DM_STOCKS_PLUGIN_DIR . 'lib/class-dm-stocks-table.php');
+require_once( DM_STOCKS_PLUGIN_DIR . 'lib/class-dm-stocks-users.php');
 require_once( DM_STOCKS_PLUGIN_DIR . 'lib/class-dm-stocks.php');
 
 if(class_exists('DMSTOCKS'))

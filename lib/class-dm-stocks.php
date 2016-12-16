@@ -44,6 +44,12 @@ if(!class_exists('DMSTOCKS')){
             add_action( 'wp_ajax_add_stock_data_to_user', [&$this,'add_stock_data_to_user'] );
             add_action( 'wp_ajax_nopriv_add_stock_data_to_user', [&$this,'add_stock_data_to_user'] );
 
+            add_action( 'wp_ajax_buy_user_stocks', [&$this,'buy_user_stocks'] );
+            add_action( 'wp_ajax_nopriv_buy_user_stocks', [&$this,'buy_user_stocks'] );
+
+            add_action( 'wp_ajax_get_transaction_history', [&$this,'get_transaction_history'] );
+            add_action( 'wp_ajax_nopriv_get_transaction_history', [&$this,'get_transaction_history'] );
+
 
             // Shortcodes
 
@@ -67,6 +73,9 @@ if(!class_exists('DMSTOCKS')){
 
                 wp_register_script('client-stocks-widget', 'https://d33t3vvu2t2yu5.cloudfront.net/tv.js', ['jquery'] );
                 wp_enqueue_script('client-stocks-widget');
+
+                wp_register_script('client-bootbox-js', 'https://cdnjs.cloudflare.com/ajax/libs/bootbox.js/4.4.0/bootbox.min.js', ['jquery'] );
+                wp_enqueue_script('client-bootbox-js');
 
                 wp_register_script('client-stocks-watchlist-js', DM_STOCKS_PLUGIN_URL . 'assets/watchlist.js', ['jquery'] );
                 wp_enqueue_script('client-stocks-watchlist-js');
@@ -136,7 +145,9 @@ if(!class_exists('DMSTOCKS')){
                         'volume' => (float)$stockData['details']->volume,
                         'price' => (float)$stockData['details']->price,
                     ]),
-                    'profile' => json_encode($stockData['profile'])
+                    'profile' => json_encode($stockData['profile']),
+                    'created_at' => date('Y-m-d H:i:s'),
+                    'updated_at' => date('Y-m-d H:i:s')
                 ];
 
             }
@@ -306,7 +317,12 @@ if(!class_exists('DMSTOCKS')){
 
         public function add_stock_data_to_user(){
             $symbol = $_POST['s'];
+
             if(!empty($symbol)){
+
+                $users = new DMSTOCKSUSERS();
+                return $users->addSymbolToUser($symbol);
+
                 return add_user_meta(get_current_user_id(),'stock-watchlist',[
                     'symbol' => $symbol,
                     'date' => date('Y-m-d H:i:s')
@@ -461,6 +477,24 @@ if(!class_exists('DMSTOCKS')){
             return $data;
         }
 
+        public function buy_user_stocks(){
+            $symbol = $_POST['symbol'];
+            $amt = $_POST['amount'];
+            $price = $_POST['price'];
+
+            if(!empty($symbol)){
+                $users = new DMSTOCKSUSERS();
+                return json_encode($users->buy_user_stocks( false , $symbol , $amt , $price ));
+            }
+        }
+
+        public function get_transaction_history(){
+            if(!empty($symbol)){
+                $users = new DMSTOCKSUSERS();
+                return json_encode($users->get_transaction_history( false ));
+            }
+        }
+
         public function activate(){
 
             global $wpdb;
@@ -507,6 +541,41 @@ if(!class_exists('DMSTOCKS')){
                     `adj_close` float,
                     `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     `updated_at` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+                    PRIMARY KEY  (`id`)
+                );";
+
+                $wpdb->query($sql);
+            }
+
+            $table  = $table_prefix . 'dm_quotes_stocks_users';
+
+            // CREATE STOCKS BUY TABLE
+            if($wpdb->get_var("SHOW TABLES LIKE '$table'") != $table)
+            {
+                $sql = "CREATE TABLE IF NOT EXISTS " . $table . " (
+                    `id` mediumint(9) NOT NULL AUTO_INCREMENT,
+                    `userID` mediumint(9),
+                    `amount` float,
+                    `watc   hlist` TEXT,
+                    `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY  (`id`)
+                );";
+
+                $wpdb->query($sql);
+            }
+
+            $table  = $table_prefix . 'dm_quotes_stocks_users_buy';
+
+            // CREATE STOCKS BUY TABLE
+            if($wpdb->get_var("SHOW TABLES LIKE '$table'") != $table)
+            {
+                $sql = "CREATE TABLE IF NOT EXISTS " . $table . " (
+                    `id` mediumint(9) NOT NULL AUTO_INCREMENT,
+                    `userID` mediumint(9),
+                    `symbol` VARCHAR(255),
+                    `amount` int(11),
+                    `price` float,
+                    `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     PRIMARY KEY  (`id`)
                 );";
 
