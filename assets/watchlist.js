@@ -366,6 +366,94 @@ jQuery(function($){
         } );
     }
 
+
+
+    // Load Chart on Element
+    function loadPortfolioByID(data,id){
+        var chart = AmCharts.makeChart( id , {
+            "type": "serial",
+            "theme": "light",
+            "marginRight": 40,
+            "marginLeft": 40,
+            "autoMarginOffset": 20,
+            "mouseWheelZoomEnabled":true,
+            "dataDateFormat": "YYYY-MM-DD",
+            "valueAxes": [{
+                "id": "v1",
+                "axisAlpha": 0,
+                "position": "left",
+                "ignoreAxisWidth":true
+            }],
+            "balloon": {
+                "borderThickness": 1,
+                "shadowAlpha": 0
+            },
+            "graphs": [{
+                "id": "g1",
+                "balloon":{
+                    "drop":true,
+                    "adjustBorderColor":false,
+                    "color":"#ffffff"
+                },
+                "connect": false,
+                "bullet": "round",
+                "bulletBorderAlpha": 1,
+                "bulletColor": "#FFFFFF",
+                "bulletSize": 5,
+                "fillAlphas": 0.3,
+                "hideBulletsCount": 50,
+                "lineThickness": 2,
+                "lineColor": "#27AE60",
+                "fillColor": "#1ABC9C",
+                "title": "red line",
+                "useLineColorForBulletBorder": true,
+                "valueField": "value",
+                "balloonText": "<span style='font-size:18px;'>$ [[value]]</span>"
+            }],
+            "chartScrollbar": {
+                "graph": "g1",
+                "oppositeAxis":false,
+                "offset":30,
+                "scrollbarHeight": 80,
+                "backgroundAlpha": 0,
+                "selectedBackgroundAlpha": 0.1,
+                "selectedBackgroundColor": "#888888",
+                "graphFillAlpha": 0,
+                "graphLineAlpha": 0.5,
+                "selectedGraphFillAlpha": 0,
+                "selectedGraphLineAlpha": 1,
+                "autoGridCount":true,
+                "color":"#AAAAAA"
+            },
+            "chartCursor": {
+                "pan": true,
+                "valueLineEnabled": true,
+                "valueLineBalloonEnabled": true,
+                "cursorAlpha":1,
+                "cursorColor":"#1ABC9C",
+                "limitToGraph":"g1",
+                "valueLineAlpha":0.2,
+                "valueZoomable":true
+            },
+            "valueScrollbar":{
+                "oppositeAxis":false,
+                "offset":50,
+                "scrollbarHeight":10
+            },
+            "categoryField": "date",
+            "categoryAxis": {
+                "parseDates": true,
+                "dashLength": 1,
+                "minorGridEnabled": true
+            },
+            "export": {
+                "enabled": true
+            },
+            "dataProvider": data
+        } );
+
+    }
+
     $('.stock-table table tr').delegate('.btn-buy','click',function(event){
 
         var $thisrow = $(this).closest('tr');
@@ -378,24 +466,60 @@ jQuery(function($){
             inputType: 'number',
             value: '100',
             callback: function (result) {
+                if(result){
+                    var amount = result;
+                    bootbox.confirm( "<h4>Preview Order</h4><br><h3>"+ $symbol+"</h3><label>Price : $"+$price+"</label><label>Qty : "+result+"</label><label>Total : $"+( parseFloat( $price * result ).toFixed(2))+"</label>", function(result){
+                        if(result){
+                            var waitdialog = bootbox.dialog({ message: '<div class="text-center"><i class="fa fa-spin fa-spinner"></i> Loading...</div>' });
 
-                var waitdialog = bootbox.dialog({ message: '<div class="text-center"><i class="fa fa-spin fa-spinner"></i> Loading...</div>' });
-
-                $.ajax({
-                    url: "/wp-admin/admin-ajax.php?action=buy_user_stocks",
-                    type: 'POST',
-                    data: {
-                        amount : result,
-                        symbol : $symbol,
-                        price  : $price
-                    },
-                    success: function( data ) {
-                        window.location.reload();
-                        // waitdialog.modal('hide');
-                    }
-                });
+                            $.ajax({
+                                url: "/wp-admin/admin-ajax.php?action=buy_user_stocks",
+                                type: 'POST',
+                                data: {
+                                    amount : amount,
+                                    symbol : $symbol,
+                                    price  : $price
+                                },
+                                success: function( data ) {
+                                    window.location.reload();
+                                    // waitdialog.modal('hide');
+                                }
+                            });
+                        }
+                    });
+                }
             }
         });
 
     });
+
+    $.ajax( {
+        url: "/wp-admin/admin-ajax.php?action=get_portfolio_data",
+        type: 'POST',
+        success: function( data ) {
+
+            if(data.history==null){
+                $('#my-portfolio-tab').html('<div class="row text-center"><h4>Start your portfolio by buyings stocks on your watchlist</h4><a href="#stock-watchlist-tab" data-toggle="tab">Click here to start buying</a></div>');
+            }else{
+                // History
+                var history = data.history;
+                for (var i = 0; i < history.length; i++) {
+                    history[i].date = new Date(history[i].date.toString());
+                    history[i].value = parseFloat(history[i].value);
+                }
+
+                loadPortfolioByID(history,'chart-portfolio');
+
+                // Portfolio Stats
+                $('.portfolio-acct-value').text(parseFloat(data.accountvalue).toFixed(2));
+                $('.portfolio-today-value').text(parseFloat(data.dayamount).toFixed(2));
+                $('.portfolio-today-change').text(parseFloat(data.daychange).toFixed(2));
+                $('.portfolio-overall-value').text(parseFloat(data.overallamount).toFixed(2));
+                $('.portfolio-overall-change').text(parseFloat(data.overallchange).toFixed(2));
+            }
+
+        }
+    } );
+
+
 });

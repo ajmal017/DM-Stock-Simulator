@@ -23,5 +23,6 @@ require_once( DM_STOCKS_PLUGIN_DIR . 'lib/class-dm-stocks.php');
 if(class_exists('DMSTOCKS'))
 {
     $DMSTOCKS = new DMSTOCKS();
-    register_activation_hook(__FILE__, $DMSTOCKS->activate());
+    register_activation_hook(__FILE__, ['DMSTOCKS','activate']);
+    register_deactivation_hook(__FILE__, ['DMSTOCKS','deactivate']);
 }

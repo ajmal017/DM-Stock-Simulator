@@ -19,6 +19,7 @@ if(!class_exists('DMSTOCKSUSERS')){
             $this->tables['users'] = $table_prefix . 'dm_quotes_stocks_users';
             $this->tables['users_buy'] = $table_prefix . 'dm_quotes_stocks_users_buy';
             $this->tables['quotes'] = $table_prefix . 'dm_quotes';
+            $this->tables['quotes_data'] = $table_prefix . 'dm_quotes_data';
 
         }
 
@@ -80,6 +81,14 @@ if(!class_exists('DMSTOCKSUSERS')){
                 return false;
             }
 
+            if($amt <= 0){
+                $this->errors[] = [
+                    'code' => '102',
+                    'message' => 'Invalid Amount'
+                ];
+                return false;
+            }
+
             if(!$id) $id = get_current_user_id();
 
             $playerID = false;
@@ -123,9 +132,24 @@ if(!class_exists('DMSTOCKSUSERS')){
             // Check If user is logged in and already in table
             if($playerID = $this->isUserExist($id)){
 
-                $transaction = $this->db->get_results( $this->db->prepare("SELECT ub.symbol,q.name,ub.amount,ub.price,ub.created_at as date FROM `".$this->tables['users_buy']."` ub,`".$this->tables['quotes']."` q WHERE ub.userID = %d and q.symbol = ub.symbol ORDER BY ub.created_at DESC LIMIT 100" , $playerID) );
+                $transactions = $this->db->get_results( $this->db->prepare("SELECT ub.symbol,q.name,ub.amount,ub.price,ub.created_at as date FROM `".$this->tables['users_buy']."` ub,`".$this->tables['quotes']."` q WHERE ub.userID = %d and q.symbol = ub.symbol ORDER BY ub.created_at DESC" , $playerID) );
 
-                return $transaction;
+                $stockNow = [];
+
+                foreach ($transactions as $key => $transaction) {
+
+                    if(!isset($stockNow[$transaction->symbol])){
+
+                        $stockNow[$transaction->symbol] = $this->db->get_var( $this->db->prepare("SELECT `close` FROM `".$this->tables['quotes_data']."` WHERE `symbol` = '%s' ORDER BY `date` DESC LIMIT 1",  $transaction->symbol) );
+
+                    }
+
+                    $transactions[$key]->now = $stockNow[$transaction->symbol];
+
+                }
+
+
+                return $transactions;
             }
 
             return false;
@@ -165,7 +189,7 @@ if(!class_exists('DMSTOCKSUSERS')){
             return $this->db->insert($this->tables['users'],[
                 'userID' => get_current_user_id(),
                 'amount' => DM_STOCKS_INITIAL_WALLET,
-                'watchlist' => json_decode([]),
+                'watchlist' => json_encode([]),
                 'created_at' => date('Y-m-d H:i:s'),
             ]);
         }
@@ -179,6 +203,73 @@ if(!class_exists('DMSTOCKSUSERS')){
             }
 
             return false;
+        }
+
+        function getUserData($id = false){
+
+            if(!is_user_logged_in()){
+                $this->errors[] = [
+                    'code' => '104',
+                    'message' => 'User not logged in'
+                ];
+                return false;
+            }
+
+            if(!$id) $id = get_current_user_id();
+
+            $playerID = false;
+
+            // Check If user is logged in and already in table
+            if($playerID = $this->isUserExist($id)){
+                $userData = $this->db->get_row( $this->db->prepare("SELECT * FROM `".$this->tables['users']."` WHERE id = %d LIMIT 1" , $playerID) );
+                return $userData;
+            }
+
+            return false;
+        }
+
+        function getAllBuysBefore($id = false , $date = false){
+
+            if(!is_user_logged_in()){
+                $this->errors[] = [
+                    'code' => '104',
+                    'message' => 'User not logged in'
+                ];
+                return false;
+            }
+
+            if(!$id) $id = get_current_user_id();
+
+            $playerID = false;
+
+            $buys = [];
+
+            if(!$date) $date = date('Y-m-d');
+
+            $stockNow = [];
+
+            // Check If user is logged in and already in table
+            if($playerID = $this->isUserExist($id)){
+
+                $buys = $this->db->get_results( $this->db->prepare("SELECT ub.symbol, q.name, ub.amount `amt`, ub.price `before`, ub.created_at as dateBought FROM `".$this->tables['users_buy']."` ub, `".$this->tables['quotes']."` q WHERE ub.userID = %d AND q.symbol = ub.symbol AND DAYOFYEAR(ub.created_at) <= DAYOFYEAR('%s') ",$playerID,$date) );
+
+                foreach ($buys as $key => $buy) {
+
+                    if(!isset($stockNow[$buy->symbol])){
+
+                        $stockNow[$buy->symbol] = $this->db->get_var( $this->db->prepare("SELECT `close` FROM `".$this->tables['quotes_data']."` WHERE `symbol` = '%s' ORDER BY `date` DESC LIMIT 1",  $buy->symbol) );
+
+                    }
+
+                    $buys[$key]->now = $stockNow[$buy->symbol];
+
+                }
+
+                return $buys;
+            }
+
+            return $buys;
+
         }
 
     }

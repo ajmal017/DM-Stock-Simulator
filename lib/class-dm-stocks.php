@@ -12,6 +12,7 @@ if(!class_exists('DMSTOCKS')){
         function __CONSTRUCT(){
             add_action('init', [&$this, 'init']);
             add_action('admin_init', [&$this, 'admin_init']);
+            add_action('update_stock_data_cron', [&$this, 'update_stock_data_cron']);
         }
 
         public function init(){
@@ -49,6 +50,10 @@ if(!class_exists('DMSTOCKS')){
 
             add_action( 'wp_ajax_get_transaction_history', [&$this,'get_transaction_history'] );
             add_action( 'wp_ajax_nopriv_get_transaction_history', [&$this,'get_transaction_history'] );
+            add_action( 'wp_ajax_nopriv_buy_user_stocks', [&$this,'buy_user_stocks'] );
+
+            add_action( 'wp_ajax_get_portfolio_data', [&$this,'get_portfolio_data'] );
+            add_action( 'wp_ajax_nopriv_get_portfolio_data', [&$this,'get_portfolio_data'] );
 
 
             // Shortcodes
@@ -99,6 +104,94 @@ if(!class_exists('DMSTOCKS')){
 
                 include DM_STOCKS_PLUGIN_DIR . 'partials/admin-stocks-watchlist.php';
             });
+        }
+
+        public function get_portfolio_data(){
+
+            header('Content-type: application/json');
+
+            $player = new DMSTOCKSUSERS();
+            $history = $player->get_transaction_history( false );
+            $userdata = $player->getUserData();
+
+            if(count($history)):
+
+                // Group By Date
+                $historyPack = [];
+                foreach ($history as $key => $stock) {
+                    $datehere = date('Y-m-d',strtotime($stock->date));
+                    if(!isset($historyPack[$datehere])) $historyPack[$datehere] = [];
+                    $historyPack[$datehere][] = $stock;
+                }
+
+                // Reverse array , start on First Day of Trading
+                $historyPack = array_reverse($historyPack);
+
+                // Calculate Portfolio Performance per Day
+
+                $startAmount = $userdata->amount;
+                $startDate = $userdata->created_at;
+                $dateNow = date('Y-m-d H:i:s');
+
+
+                $todayValue = 0;
+                $yesterdayValue = 0;
+
+                $chartData = [];
+                $period = new DatePeriod(
+                    new DateTime($startDate),
+                    new DateInterval('P1D'),
+                    new DateTime($dateNow)
+                );
+
+
+                foreach ($period as $k => $date) {
+                    $acctvalue = $startAmount;
+
+                    $datehere = $date->format('Y-m-d');
+
+                    if($date->format("l") == "Saturday" || $date->format("l") == "Sunday") continue;
+
+                    $buys = $player->getAllBuysBefore(false,$datehere);
+
+                    if(!empty($buys)){
+                        foreach ($buys as $key => $buy) {
+
+                            if($buy->now==null) continue;
+
+                            $acctvalue += ((float)$buy->now - $buy->before) * $buy->amt;
+                        }
+                    }
+
+
+                    $chartData[] = [
+                        'date' => $datehere,
+                        'value' => $acctvalue,
+                        'buys' => $buys
+                    ];
+                }
+
+                $todayValue = $chartData[count($chartData) - 1]['value'];
+
+                if(isset($chartData[count($chartData) - 2])){
+                    $yesterdayValue = $chartData[count($chartData) - 2]['value'];
+                }
+                else{
+                    $yesterdayValue = $startAmount;
+                }
+
+
+            endif;
+
+            exit(json_encode([
+                'history' => $chartData,
+                'accountvalue' => $acctvalue,
+                'startvalue' => $startAmount,
+                'overallchange' => ( ( $acctvalue - $startAmount ) / $startAmount ) * 100,
+                'overallamount' => ( $acctvalue - $startAmount),
+                'daychange' => ( $todayValue -  $yesterdayValue ),
+                'dayamount' => ( ( $todayValue -  $yesterdayValue ) / $yesterdayValue ) * 100
+            ]));
         }
 
         public function save_stock_data(){
@@ -392,8 +485,10 @@ if(!class_exists('DMSTOCKS')){
             return $data;
         }
 
-        public function updateStockData(){
-            $sym = $_POST['symbol'];
+        public function updateStockData( $sym = false ){
+
+            if($sym===false) $sym = $_POST['symbol'];
+
             $timeLastMonth = strtotime('last year');
             $from = [
                 date('m',$timeLastMonth),
@@ -406,7 +501,6 @@ if(!class_exists('DMSTOCKS')){
                 date('Y')
             ];
             $csvurl = 'http://real-chart.finance.yahoo.com/table.csv?s='.$sym.'&d='.(absint($to[0])-1).'&e='.absint($to[1]).'&f='.absint($to[2]).'&g=d&a='.(absint($from[0])-1).'&b='.absint($from[1]).'&c='.absint($from[2]).'&ignore=.csv';
-
 
             $csv = array_map('str_getcsv', file($csvurl));
             array_walk($csv, function(&$a) use ($csv) {
@@ -431,6 +525,7 @@ if(!class_exists('DMSTOCKS')){
 
                     // IF NOT EXIST , INSERT
                     if(!$exist){
+
                         $symbolID = $wpdb->insert($table,[
                             'symbol' => $sym,
                             'date' => $data['Date'],
@@ -444,6 +539,7 @@ if(!class_exists('DMSTOCKS')){
                             'updated_at' => date('Y-m-d H:i:s'),
                         ]);
                     }else{
+
                         $symbolID = $wpdb->update($table,[
                             'open' => $data['Open'],
                             'high' => $data['High'],
@@ -457,11 +553,23 @@ if(!class_exists('DMSTOCKS')){
                             'date' => $data['Date'],
                             'symbol' => $sym
                         ]);
+
+
                     }
                 }
             }
 
-            exit(1);
+
+            $table  = $table_prefix . 'dm_quotes';
+
+            $wpdb->update($table,[
+                'updated_at' => date('Y-m-d H:i:s'),
+            ],[
+                'symbol' => $sym
+            ]);
+
+            if(!empty($_POST)) exit(1);
+            else return true;
         }
 
         public function fetchCURL($uri = false){
@@ -495,7 +603,26 @@ if(!class_exists('DMSTOCKS')){
             }
         }
 
-        public function activate(){
+        public static function deactivate(){
+            wp_clear_scheduled_hook('update_stock_data_cron');
+        }
+
+        public function update_stock_data_cron(){
+
+            // Get List of quotes
+            global $wpdb;
+
+            global $table_prefix;
+            $table  = $table_prefix . 'dm_quotes';
+            $quotes = $wpdb->get_col( "SELECT symbol FROM $table" );
+
+            foreach ($quotes as $key => $symbol) {
+                $this->updateStockData($symbol);
+            }
+
+        }
+
+        public static function activate(){
 
             global $wpdb;
             global $table_prefix;
@@ -580,6 +707,10 @@ if(!class_exists('DMSTOCKS')){
                 );";
 
                 $wpdb->query($sql);
+            }
+
+            if (! wp_next_scheduled ( 'update_stock_data_cron' )) {
+                wp_schedule_event(time(), 'hourly', 'update_stock_data_cron');
             }
         }
 
