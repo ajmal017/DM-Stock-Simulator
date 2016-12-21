@@ -35,7 +35,7 @@
                                 ?>
                                 <tr data-symbol="<?=$watch->symbol?>" class="stock-row" >
                                     <td class="value-subdetails">
-                                        <label class="lead-text"><?=$watch->symbol?><i class="fa pull-right fa-bar-chart-o text-gray toggle-chart-info"></i></label>
+                                        <label class="lead-text"><?=$watch->symbol?><i class="fa pull-right fa-bar-chart-o text-gray toggle-chart-info"></i></label><br>
                                         <small class="help-text">Loading data...</small>
                                     </td>
                                     <td colspan="9">

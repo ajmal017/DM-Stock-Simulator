@@ -94,11 +94,11 @@ jQuery(function($){
                     var $latestHistory = data.history[data.history.length - 1] || [];
 
 
-                    $thisRowCells.push('<td class="value-subdetails"> <label class="lead-text">'+data.symbol+'<i class="toggle-chart-info fa pull-right fa-bar-chart-o text-gray"></i></label> <small class="help-text">'+data.name+'</small> </td>');
+                    $thisRowCells.push('<td class="value-subdetails"> <label class="lead-text block">'+data.symbol+'<i class="toggle-chart-info fa pull-right fa-bar-chart-o text-gray"></i></label><small class="help-text">'+data.name+'</small> </td>');
                     $thisRowCells.push('<td class="sparkwrap"><span class="sparklines" data-symbol="'+data.symbol+'"></span></td>');
                     $thisRowCells.push('<td> <button class="btn btn-sm btn-success btn-sell"><i class="fa fa-dollar"></i> '+parseFloat($latestHistory.close).toFixed(2)+'</button> </td>');
                     $thisRowCells.push('<td> <button class="btn btn-sm btn-danger btn-buy"><i class="fa fa-dollar"></i> '+parseFloat($latestHistory.close).toFixed(2)+'</button> </td>');
-                    $thisRowCells.push('<td class="value-subdetails subdetails-right"> <label class="lead-text">'+parseFloat(statistics.change).toFixed(2)+'</label> <small class="help-text">'+parseFloat(statistics.change_percent).toFixed(2)+'%</small> </td>');
+                    $thisRowCells.push('<td class="value-subdetails subdetails-right"> <label class="lead-text block">'+parseFloat(statistics.change).toFixed(2)+'</label> <small class="help-text">'+parseFloat(statistics.change_percent).toFixed(2)+'%</small> </td>');
                     $thisRowCells.push('<td class="value-subdetails subdetails-right"> <label class="lead-text">'+parseFloat($latestHistory.high).toFixed(2)+'</label> <small class="help-text">&nbsp;</small> </td>');
                     $thisRowCells.push('<td class="value-subdetails subdetails-right"> <label class="lead-text">'+parseFloat($latestHistory.low).toFixed(2)+'</label> <small class="help-text">&nbsp;</small> </td>');
                     $thisRowCells.push('<td class="value-subdetails subdetails-right"> <label class="lead-text">'+parseFloat($latestHistory.open).toFixed(2)+'</label> <small class="help-text">&nbsp;</small> </td>');
@@ -470,7 +470,7 @@ jQuery(function($){
             callback: function (result) {
                 if(result){
                     var amount = result;
-                    bootbox.confirm( "<h4>Preview Order</h4><br><h3>"+ $symbol+"</h3><label>Price : $"+$price+"</label><label>Qty : "+result+"</label><label>Total : $"+( parseFloat( $price * result ).toFixed(2))+"</label>", function(result){
+                    bootbox.confirm( "<h4>Preview Order</h4><br><h3>"+ $symbol+"</h3><label class='block'>Price : $"+$price+"</label><label class='block'>Qty : "+result+"</label><label class='block'>Total : $"+( parseFloat( $price * result ).toFixed(2))+"</label>", function(result){
                         if(result){
                             var waitdialog = bootbox.dialog({ message: '<div class="text-center"><i class="fa fa-spin fa-spinner"></i> Loading...</div>' });
 
