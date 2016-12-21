@@ -4,7 +4,7 @@ $users = new DMSTOCKSUSERS();
 $history = $users->get_transaction_history( false );
 
 function negatePriceValue($value,$prefix = '',$suffix = '',$precision = 2,$class = false){
-    
+
     $negate = (float)($value) < 0;
 
     if($negate){
@@ -23,7 +23,7 @@ function negatePriceValue($value,$prefix = '',$suffix = '',$precision = 2,$class
             <th>Symbol</th>
             <th>Name</th>
             <th>Amount</th>
-            <th>Purchace Price</th>
+            <th>Purchase Price</th>
             <th>Current Price</th>
             <th>Gain</th>
             <th>Date</th>
@@ -35,7 +35,7 @@ function negatePriceValue($value,$prefix = '',$suffix = '',$precision = 2,$class
 
 
 
-        if(count($history)):
+        if($history && count($history)>0):
             foreach ($history as $key => $data):
                 ?>
                 <tr>

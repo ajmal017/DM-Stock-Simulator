@@ -27,7 +27,6 @@
 
                         <?php
 
-                        $watchlist = get_user_meta(get_current_user_id(),'stock-watchlist');
                         $users = new DMSTOCKSUSERS();
                         $watchlist = $users->getWatchList();
 

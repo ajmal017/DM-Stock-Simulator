@@ -96,15 +96,15 @@ jQuery(function($){
 
                     $thisRowCells.push('<td class="value-subdetails"> <label class="lead-text">'+data.symbol+'<i class="toggle-chart-info fa pull-right fa-bar-chart-o text-gray"></i></label> <small class="help-text">'+data.name+'</small> </td>');
                     $thisRowCells.push('<td class="sparkwrap"><span class="sparklines" data-symbol="'+data.symbol+'"></span></td>');
-                    $thisRowCells.push('<td> <button class="btn btn-sm btn-success btn-sell"><i class="fa fa-dollar"></i> '+parseFloat(statistics.price).toFixed(2)+'</button> </td>');
-                    $thisRowCells.push('<td> <button class="btn btn-sm btn-danger btn-buy"><i class="fa fa-dollar"></i> '+parseFloat(statistics.price).toFixed(2)+'</button> </td>');
+                    $thisRowCells.push('<td> <button class="btn btn-sm btn-success btn-sell"><i class="fa fa-dollar"></i> '+parseFloat($latestHistory.close).toFixed(2)+'</button> </td>');
+                    $thisRowCells.push('<td> <button class="btn btn-sm btn-danger btn-buy"><i class="fa fa-dollar"></i> '+parseFloat($latestHistory.close).toFixed(2)+'</button> </td>');
                     $thisRowCells.push('<td class="value-subdetails subdetails-right"> <label class="lead-text">'+parseFloat(statistics.change).toFixed(2)+'</label> <small class="help-text">'+parseFloat(statistics.change_percent).toFixed(2)+'%</small> </td>');
                     $thisRowCells.push('<td class="value-subdetails subdetails-right"> <label class="lead-text">'+parseFloat($latestHistory.high).toFixed(2)+'</label> <small class="help-text">&nbsp;</small> </td>');
                     $thisRowCells.push('<td class="value-subdetails subdetails-right"> <label class="lead-text">'+parseFloat($latestHistory.low).toFixed(2)+'</label> <small class="help-text">&nbsp;</small> </td>');
                     $thisRowCells.push('<td class="value-subdetails subdetails-right"> <label class="lead-text">'+parseFloat($latestHistory.open).toFixed(2)+'</label> <small class="help-text">&nbsp;</small> </td>');
                     $thisRowCells.push('<td class="value-subdetails subdetails-right"> <label class="lead-text">'+parseFloat($latestHistory.close).toFixed(2)+'</label> <small class="help-text">&nbsp;</small> </td>');
                     $thisRowCells.push('<td class="value-subdetails subdetails-right"> <label class="lead-text">'+parseFloat($latestHistory.volume).toFixed(0)+'</label> <small class="help-text">&nbsp;</small> </td>');
-                    $thisRow.data('price',parseFloat(statistics.price).toFixed(2));
+                    $thisRow.data('price',parseFloat($latestHistory.close).toFixed(2));
 
                     $thisRow.html($thisRowCells.join(''));
                     var $sparkspan = $thisRow.find('[data-symbol="'+data.symbol+'"]').first();
@@ -375,6 +375,7 @@ jQuery(function($){
             "theme": "light",
             "marginRight": 40,
             "marginLeft": 40,
+            "marginTop": 100,
             "autoMarginOffset": 20,
             "mouseWheelZoomEnabled":true,
             "dataDateFormat": "YYYY-MM-DD",
@@ -382,7 +383,8 @@ jQuery(function($){
                 "id": "v1",
                 "axisAlpha": 0,
                 "position": "left",
-                "ignoreAxisWidth":true
+                "ignoreAxisWidth":true,
+                "minimum": 0
             }],
             "balloon": {
                 "borderThickness": 1,
@@ -408,7 +410,7 @@ jQuery(function($){
                 "title": "red line",
                 "useLineColorForBulletBorder": true,
                 "valueField": "value",
-                "balloonText": "<span style='font-size:18px;'>$ [[value]]</span>"
+                "balloonText": "<span style='font-size:14px;'>$ [[value]]</span>"
             }],
             "chartScrollbar": {
                 "graph": "g1",
@@ -498,7 +500,7 @@ jQuery(function($){
         type: 'POST',
         success: function( data ) {
 
-            if(data.history==null){
+            if(data.history==null || data.history.length < 1){
                 $('#my-portfolio-tab').html('<div class="row text-center"><h4>Start your portfolio by buyings stocks on your watchlist</h4><a href="#stock-watchlist-tab" data-toggle="tab">Click here to start buying</a></div>');
             }else{
                 // History

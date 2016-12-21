@@ -20,11 +20,10 @@ if(!class_exists('DMSTOCKSUSERS')){
             $this->tables['users_buy'] = $table_prefix . 'dm_quotes_stocks_users_buy';
             $this->tables['quotes'] = $table_prefix . 'dm_quotes';
             $this->tables['quotes_data'] = $table_prefix . 'dm_quotes_data';
-
         }
 
 
-        function addSymbolToUser($symbol){
+        public function addSymbolToUser($symbol = false){
             if(!empty($symbol)){
                 $watchlist = $this->getWatchList();
 
@@ -53,7 +52,7 @@ if(!class_exists('DMSTOCKSUSERS')){
             }
         }
 
-        function updateWatchList($id = false,$watchlist = []){
+        public function updateWatchList($id = false,$watchlist = []){
             if(!is_user_logged_in()){
                 $this->errors[] = [
                     'code' => '104',
@@ -64,14 +63,17 @@ if(!class_exists('DMSTOCKSUSERS')){
 
             if(!$id) $id = get_current_user_id();
 
-            return $this->db->update($this->tables['users'],[
-                'watchlist' => json_encode($watchlist)
-            ],[
-                'userID' => $id
-            ]);
+            if($playerID = $this->isUserExist($id)){
+
+                 return $this->db->update($this->tables['users'],[
+                     'watchlist' => json_encode($watchlist)
+                 ],[
+                     'id' => $playerID
+                 ]);
+            }
         }
 
-        function buy_user_stocks( $id = false, $symbol = null, $amt = 0, $price = 0){
+        public function buy_user_stocks( $id = false, $symbol = null, $amt = 0, $price = 0){
 
             if(!is_user_logged_in()){
                 $this->errors[] = [
@@ -170,8 +172,10 @@ if(!class_exists('DMSTOCKSUSERS')){
             $playerID = false;
             // Check If user is logged in and already in table
             if(!($playerID = $this->isUserExist($id))){
+
                 // If User not yet in database, create entry
                 $playerID = $this->prepareUserData();
+
             }
 
             // Get WatchList via PlayerID

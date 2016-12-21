@@ -189,8 +189,8 @@ if(!class_exists('DMSTOCKS')){
                 'startvalue' => $startAmount,
                 'overallchange' => ( ( $acctvalue - $startAmount ) / $startAmount ) * 100,
                 'overallamount' => ( $acctvalue - $startAmount),
-                'daychange' => ( $todayValue -  $yesterdayValue ),
-                'dayamount' => ( ( $todayValue -  $yesterdayValue ) / $yesterdayValue ) * 100
+                'daychange' => ( ( $todayValue -  $yesterdayValue ) / $yesterdayValue ) * 100,
+                'dayamount' => ( $todayValue -  $yesterdayValue )
             ]));
         }
 
@@ -414,12 +414,7 @@ if(!class_exists('DMSTOCKS')){
             if(!empty($symbol)){
 
                 $users = new DMSTOCKSUSERS();
-                return $users->addSymbolToUser($symbol);
-
-                return add_user_meta(get_current_user_id(),'stock-watchlist',[
-                    'symbol' => $symbol,
-                    'date' => date('Y-m-d H:i:s')
-                ]);
+                die(json_encode($users->addSymbolToUser($symbol)));
             }
 
             return 0;
@@ -683,7 +678,7 @@ if(!class_exists('DMSTOCKS')){
                     `id` mediumint(9) NOT NULL AUTO_INCREMENT,
                     `userID` mediumint(9),
                     `amount` float,
-                    `watc   hlist` TEXT,
+                    `watchlist` TEXT,
                     `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     PRIMARY KEY  (`id`)
                 );";
