@@ -384,7 +384,7 @@ jQuery(function($){
                 "axisAlpha": 0,
                 "position": "left",
                 "ignoreAxisWidth":true,
-                "minimum": 0
+                // "minimum": 0
             }],
             "balloon": {
                 "borderThickness": 1,
