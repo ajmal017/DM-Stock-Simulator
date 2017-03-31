@@ -426,7 +426,7 @@ if(!class_exists('DMSTOCKS')){
             $data = false;
 
             // Get Primary Details
-            $baseURLQuote = 'http://finance.yahoo.com/webservice/v1/symbols/'.$symbol.'/quote?format=json&view=detail';
+            $baseURLQuote = 'http://finance.yahoo.com/webservice/v1/symbols/'.$symbol.'/quote';
 
             $requestURL = add_query_arg([
                 'format' => 'json',
